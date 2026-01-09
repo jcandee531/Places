@@ -20,6 +20,11 @@ function requiredEnv(name) {
 }
 
 function readSigningKeyPem() {
+  // Prefer direct PEM via env for easy deployments (e.g., GitHub Actions/Secrets).
+  const pem = process.env.MASTERCARD_SIGNING_KEY_PEM;
+  if (pem && pem.trim()) return pem;
+
+  // Fallback to reading a PEM file from disk for local development.
   const p = requiredEnv("MASTERCARD_SIGNING_KEY_PATH");
   return fs.readFileSync(p, "utf8");
 }

@@ -24,7 +24,9 @@ cp .env.example .env
 
 Fill in:
 - `MASTERCARD_CONSUMER_KEY`
-- `MASTERCARD_SIGNING_KEY_PATH` (a **PEM** private key used for OAuth signing)
+- **One** of:
+  - `MASTERCARD_SIGNING_KEY_PEM` (recommended for deployments / secrets)
+  - `MASTERCARD_SIGNING_KEY_PATH` (local dev: path to a PEM file)
 
 #### Private key format
 
@@ -39,6 +41,12 @@ Then set:
 ```bash
 MASTERCARD_SIGNING_KEY_PATH=/absolute/path/to/mastercard-private-key.pem
 ```
+
+#### Using GitHub Secrets (deployments)
+
+If you’re deploying via GitHub Actions (or any platform that supports environment variables), add these secrets:
+- `MASTERCARD_CONSUMER_KEY`
+- `MASTERCARD_SIGNING_KEY_PEM` (paste the full PEM, including the BEGIN/END lines)
 
 ### 3) Run
 
