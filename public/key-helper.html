@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Key Helper • Places</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">Places</div>
+      <div class="hint">Helper to configure Render secrets.</div>
+    </header>
+
+    <main class="layout" style="grid-template-columns: 1fr">
+      <section class="panel" style="border-right: none">
+        <div class="controls">
+          <div class="row">
+            <div class="label"><strong>Goal</strong></div>
+            <div class="statusText">
+              Convert your downloaded <code>.p12</code> signing key file into a
+              single-line base64 value that you can paste into Render as
+              <code>MASTERCARD_SIGNING_KEY_P12_BASE64</code>.
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="label"><strong>Important</strong></div>
+            <div class="statusText">
+              This page converts the file <strong>in your browser</strong>. It
+              does not need to upload the file anywhere. After you paste the
+              base64 into Render, you can close this page.
+            </div>
+          </div>
+
+          <div class="row">
+            <label class="label" for="p12file">Choose your .p12 file</label>
+            <input id="p12file" type="file" accept=".p12,.pfx" />
+            <div class="statusText">
+              If you downloaded a <code>.zip</code>, unzip it first and select
+              the <code>.p12</code> inside.
+            </div>
+          </div>
+
+          <div class="row">
+            <label class="label" for="b64"
+              >Copy/paste into Render as
+              <code>MASTERCARD_SIGNING_KEY_P12_BASE64</code></label
+            >
+            <textarea
+              id="b64"
+              rows="10"
+              spellcheck="false"
+              placeholder="Base64 output will appear here…"
+            ></textarea>
+            <div class="row actions" style="grid-template-columns: 1fr 1fr">
+              <button id="copy" class="primary" disabled>Copy base64</button>
+              <a class="link" href="/" style="text-align: center">Back</a>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="label"><strong>What to set in Render</strong></div>
+            <div class="statusText" style="line-height: 1.6">
+              In Render → your service → <strong>Environment</strong>, set:
+              <br />
+              - <code>MASTERCARD_CONSUMER_KEY</code>
+              <br />
+              - <code>MASTERCARD_SIGNING_KEY_P12_BASE64</code> (from above)
+              <br />
+              - <code>MASTERCARD_SIGNING_KEY_P12_PASSWORD</code> (the password
+              provided by Mastercard)
+            </div>
+          </div>
+
+          <div class="row status">
+            <div id="status" class="statusText">Ready.</div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const fileInput = document.getElementById("p12file");
+      const out = document.getElementById("b64");
+      const copyBtn = document.getElementById("copy");
+      const statusEl = document.getElementById("status");
+
+      function setStatus(msg) {
+        statusEl.textContent = msg;
+      }
+
+      function arrayBufferToBase64(buffer) {
+        // Convert in chunks to avoid call stack limits.
+        const bytes = new Uint8Array(buffer);
+        const chunkSize = 0x8000;
+        let binary = "";
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+          const chunk = bytes.subarray(i, i + chunkSize);
+          binary += String.fromCharCode.apply(null, chunk);
+        }
+        return btoa(binary);
+      }
+
+      fileInput.addEventListener("change", async () => {
+        const f = fileInput.files && fileInput.files[0];
+        if (!f) return;
+        if (!/\.(p12|pfx)$/i.test(f.name)) {
+          setStatus("Please select a .p12 or .pfx file (not a .zip).");
+          out.value = "";
+          copyBtn.disabled = true;
+          return;
+        }
+        setStatus("Reading file…");
+        try {
+          const buf = await f.arrayBuffer();
+          const b64 = arrayBufferToBase64(buf);
+          out.value = b64;
+          copyBtn.disabled = false;
+          setStatus("Done. Copy the base64 into Render.");
+        } catch (e) {
+          out.value = "";
+          copyBtn.disabled = true;
+          setStatus("Could not read the file.");
+        }
+      });
+
+      copyBtn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(out.value);
+          setStatus("Copied.");
+        } catch {
+          out.focus();
+          out.select();
+          setStatus("Select all and copy manually (Ctrl+C / Cmd+C).");
+        }
+      });
+    </script>
+  </body>
+</html>
+

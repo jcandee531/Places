@@ -69,6 +69,20 @@ Open:
 - Adjust radius and max results
 - Click **Search**
 
+## Deploying to Render (no terminal / using .p12)
+
+If you only have a `.p12` signing key and you don’t want to run OpenSSL:
+
+1. Deploy the repo as a **Render Web Service** (Node).
+2. Open your deployed site and visit:
+   - `/key-helper.html`
+3. Upload your `.p12` to generate `MASTERCARD_SIGNING_KEY_P12_BASE64` (in-browser).
+4. In Render → your service → **Environment**, set:
+   - `MASTERCARD_CONSUMER_KEY`
+   - `MASTERCARD_SIGNING_KEY_P12_BASE64`
+   - `MASTERCARD_SIGNING_KEY_P12_PASSWORD`
+5. Save changes and let Render redeploy.
+
 ## Notes / troubleshooting
 
 - **Secrets stay on the server**: the browser calls `GET /api/merchants`, and the server signs the upstream Mastercard request.
