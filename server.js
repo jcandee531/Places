@@ -3,6 +3,7 @@ const fs = require("fs");
 const express = require("express");
 const dotenv = require("dotenv");
 const { OAuth } = require("mastercard-oauth1-signer");
+const forge = require("node-forge");
 
 dotenv.config();
 
@@ -24,9 +25,70 @@ function readSigningKeyPem() {
   const pem = process.env.MASTERCARD_SIGNING_KEY_PEM;
   if (pem && pem.trim()) return pem;
 
-  // Fallback to reading a PEM file from disk for local development.
+  // Support supplying a .p12 as base64 + password (avoids needing OpenSSL locally).
+  const p12b64 = process.env.MASTERCARD_SIGNING_KEY_P12_BASE64;
+  if (p12b64 && p12b64.trim()) {
+    const password = process.env.MASTERCARD_SIGNING_KEY_P12_PASSWORD || "";
+    try {
+      const derBytes = forge.util.decode64(p12b64.trim());
+      const asn1 = forge.asn1.fromDer(derBytes);
+      const p12 = forge.pkcs12.pkcs12FromAsn1(asn1, password);
+
+      // Common: key stored in a "pkcs8ShroudedKeyBag" (encrypted) or "keyBag".
+      const bags =
+        p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })[
+          forge.pki.oids.pkcs8ShroudedKeyBag
+        ] ||
+        p12.getBags({ bagType: forge.pki.oids.keyBag })[forge.pki.oids.keyBag] ||
+        [];
+
+      const bag = bags[0];
+      if (!bag || !bag.key) {
+        throw new Error(
+          "Could not find a private key in the provided .p12 (wrong file or password)."
+        );
+      }
+      return forge.pki.privateKeyToPem(bag.key);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      throw new Error(`Failed to parse MASTERCARD_SIGNING_KEY_P12_BASE64: ${msg}`);
+    }
+  }
+
+  // Fallback to reading a key from disk for local dev OR "secret files" mounts.
+  // This path may point to:
+  // - a PEM file (starts with "-----BEGIN")
+  // - a PKCS#12 file (.p12/.pfx) which we can parse with MASTERCARD_SIGNING_KEY_P12_PASSWORD
   const p = requiredEnv("MASTERCARD_SIGNING_KEY_PATH");
-  return fs.readFileSync(p, "utf8");
+  const buf = fs.readFileSync(p);
+  const maybeText = buf.toString("utf8");
+  if (maybeText.trim().startsWith("-----BEGIN")) return maybeText;
+
+  // Not PEM; try PKCS#12
+  const password = process.env.MASTERCARD_SIGNING_KEY_P12_PASSWORD || "";
+  try {
+    const derBytes = forge.util.createBuffer(buf.toString("binary"), "binary")
+      .getBytes();
+    const asn1 = forge.asn1.fromDer(derBytes);
+    const p12 = forge.pkcs12.pkcs12FromAsn1(asn1, password);
+
+    const bags =
+      p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })[
+        forge.pki.oids.pkcs8ShroudedKeyBag
+      ] ||
+      p12.getBags({ bagType: forge.pki.oids.keyBag })[forge.pki.oids.keyBag] ||
+      [];
+    const bag = bags[0];
+    if (!bag || !bag.key) {
+      throw new Error(
+        "Could not find a private key in MASTERCARD_SIGNING_KEY_PATH (wrong file or password)."
+      );
+    }
+    return forge.pki.privateKeyToPem(bag.key);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    throw new Error(`Failed to parse key at MASTERCARD_SIGNING_KEY_PATH: ${msg}`);
+  }
 }
 
 function getMerchantSearchUrl() {

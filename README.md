@@ -46,7 +46,13 @@ MASTERCARD_SIGNING_KEY_PATH=/absolute/path/to/mastercard-private-key.pem
 
 If you’re deploying via GitHub Actions (or any platform that supports environment variables), add these secrets:
 - `MASTERCARD_CONSUMER_KEY`
-- `MASTERCARD_SIGNING_KEY_PEM` (paste the full PEM, including the BEGIN/END lines)
+- One of:
+  - `MASTERCARD_SIGNING_KEY_PEM` (paste the full PEM, including the BEGIN/END lines)
+  - `MASTERCARD_SIGNING_KEY_P12_BASE64` + `MASTERCARD_SIGNING_KEY_P12_PASSWORD` (if you only have a `.p12`)
+
+If your host supports **secret files** (a file mounted into the container), you can also set:
+- `MASTERCARD_SIGNING_KEY_PATH` to the mounted `.p12` path
+- `MASTERCARD_SIGNING_KEY_P12_PASSWORD` to the `.p12` password
 
 ### 3) Run
 
