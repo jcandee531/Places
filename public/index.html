@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mastercard Acceptance Finder</title>
+    <link rel="stylesheet" href="styles.css" />
+
+    <!-- Leaflet (map) -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+      defer
+    ></script>
+    <script src="app.js" defer></script>
+  </head>
+
+  <body>
+    <header class="topbar">
+      <div class="brand">Places</div>
+      <div class="hint">
+        Click the map to search nearby merchants that accept Mastercard.
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <div class="controls">
+          <div class="row">
+            <label class="label" for="radius">Radius (km)</label>
+            <div class="inline">
+              <input id="radius" type="range" min="0.5" max="25" step="0.5" />
+              <div class="value" id="radiusValue"></div>
+            </div>
+          </div>
+
+          <div class="row">
+            <label class="label" for="limit">Max results</label>
+            <input id="limit" type="number" min="1" max="100" step="1" />
+          </div>
+
+          <div class="row">
+            <label class="label" for="name">Name contains (optional)</label>
+            <input
+              id="name"
+              type="text"
+              placeholder="e.g. coffee, grocery, fuel"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="row actions">
+            <button id="useLocation">Use my location</button>
+            <button id="search" class="primary">Search</button>
+          </div>
+
+          <div class="row status">
+            <div id="status" class="statusText">Ready.</div>
+          </div>
+        </div>
+
+        <div class="results">
+          <div class="resultsHeader">
+            <div class="resultsTitle">Merchants</div>
+            <div class="resultsMeta" id="resultsMeta"></div>
+          </div>
+          <div id="resultsList" class="resultsList"></div>
+
+          <details class="debug">
+            <summary>Raw API response (debug)</summary>
+            <pre id="raw"></pre>
+          </details>
+        </div>
+      </section>
+
+      <section class="mapWrap">
+        <div id="map" class="map"></div>
+      </section>
+    </main>
+  </body>
+</html>
+
